@@ -10,22 +10,6 @@ Single-file Bash tool to sample memory usage of a target process and its entire 
 - Portable: macOS and Linux (graceful fallbacks per-OS)
 - Optional charts via gnuplot (if installed)
 
-## What memmark measures
-
-Memmark samples once per interval and sums metrics across the tracked process and all of its descendants:
-
-- rss_kib: Resident Set Size sum in KiB (macOS+Linux via `ps`)
-- vsz_kib: Virtual memory size sum in KiB (macOS+Linux via `ps`)
-- swap_kib: Swap in KiB (Linux via `/proc/*/smaps` when `--smaps` is enabled; blank on macOS)
-- pss_kib: Proportional Set Size in KiB (Linux via `/proc/*/smaps` when `--smaps` is enabled)
-- phys_footprint_kib: macOS Physical Footprint (via `vmmap -summary`, optional)
-- mapped_regions: Count of mapped regions (Linux via `/proc/*/maps` line count; macOS via `vmmap` region count, optional)
-- pid_count: Number of processes included in the sample
-
-Notes:
-- Some metrics are best-effort and platform-dependent. If a metric is unavailable, the CSV column remains empty for that sample.
-- Reading `/proc/*/smaps` can be slower; memmark defaults to fast mode. Use `--smaps` to enable PSS/swap collection.
-
 ## Installation
 
 - Install using the provided `install.sh` script:
@@ -54,6 +38,22 @@ On Linux, add `--smaps` to collect PSS/swap via smaps.
 Stop conditions:
 - If tracking a command, memmark exits when the command exits (and returns the command's exit code).
 - If attaching to a PID, memmark exits when the root PID exits or when `--duration` is reached, whichever comes first.
+
+## What memmark measures
+
+Memmark samples once per interval and sums metrics across the tracked process and all of its descendants:
+
+- rss_kib: Resident Set Size sum in KiB (macOS+Linux via `ps`)
+- vsz_kib: Virtual memory size sum in KiB (macOS+Linux via `ps`)
+- swap_kib: Swap in KiB (Linux via `/proc/*/smaps` when `--smaps` is enabled; blank on macOS)
+- pss_kib: Proportional Set Size in KiB (Linux via `/proc/*/smaps` when `--smaps` is enabled)
+- phys_footprint_kib: macOS Physical Footprint (via `vmmap -summary`, optional)
+- mapped_regions: Count of mapped regions (Linux via `/proc/*/maps` line count; macOS via `vmmap` region count, optional)
+- pid_count: Number of processes included in the sample
+
+Notes:
+- Some metrics are best-effort and platform-dependent. If a metric is unavailable, the CSV column remains empty for that sample.
+- Reading `/proc/*/smaps` can be slower; memmark defaults to fast mode. Use `--smaps` to enable PSS/swap collection.
 
 ### CLI
 
