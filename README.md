@@ -16,7 +16,7 @@ Memmark samples once per interval and sums metrics across the tracked process an
 
 - rss_kib: Resident Set Size sum in KiB (macOS+Linux via `ps`)
 - vsz_kib: Virtual memory size sum in KiB (macOS+Linux via `ps`)
-- swap_kib: Swap in KiB (Linux via `/proc/*/smaps` when `--smaps` is enabled; blank on macOS unless `vmmap` parsing succeeds)
+- swap_kib: Swap in KiB (Linux via `/proc/*/smaps` when `--smaps` is enabled; blank on macOS)
 - pss_kib: Proportional Set Size in KiB (Linux via `/proc/*/smaps` when `--smaps` is enabled)
 - phys_footprint_kib: macOS Physical Footprint (via `vmmap -summary`, optional)
 - mapped_regions: Count of mapped regions (Linux via `/proc/*/maps` line count; macOS via `vmmap` region count, optional)
@@ -53,9 +53,9 @@ memmark --interval 500ms --out train.csv -- python train.py --epochs 3
 On Linux, add `--smaps` to collect PSS/swap via smaps.
 Stop conditions:
 - If tracking a command, memmark exits when the command exits (and returns the command's exit code).
-- If attaching to a PID, memmark exits when the root PID exits, unless `--duration` is set.
+- If attaching to a PID, memmark exits when the root PID exits or when `--duration` is reached, whichever comes first.
 
-### CLI (planned)
+### CLI
 
 - `--pid <PID>`: Track an existing process. Mutually exclusive with running a command.
 - `-- <COMMAND ...>`: Everything after `--` is executed and tracked as the root process.

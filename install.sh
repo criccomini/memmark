@@ -8,6 +8,9 @@ set -euo pipefail
 IFS=$' \t\n'
 LC_ALL=C
 
+# Default URL to fetch memmark.sh if not provided and local file is missing
+DEFAULT_MEMMARK_URL="https://raw.githubusercontent.com/criccomini/memmark/main/memmark.sh"
+
 usage() {
   cat <<'USAGE'
 install.sh - Install memmark
@@ -37,7 +40,6 @@ choose_bin_dir() {
   candidates+=("$HOME/.local/bin")
   candidates+=("$HOME/bin")
   # If common system dirs are writable, consider them (no sudo here)
-  [[ -w "/opt/homebrew/bin" ]] && candidates+=("/opt/homebrew/bin")
   [[ -w "/usr/local/bin" ]] && candidates+=("/usr/local/bin")
 
   local d
@@ -112,8 +114,21 @@ main() {
     if [[ -f "./memmark.sh" ]]; then
       src="./memmark.sh"
     else
-      echo "[install] Local ./memmark.sh not found. Provide --url to download." >&2
-      exit 1
+      echo "[install] Local ./memmark.sh not found. Downloading from default URL: $DEFAULT_MEMMARK_URL"
+      if have_cmd curl; then
+        tmp=$(mktemp -t memmark.XXXXXX || true)
+        [[ -z "$tmp" ]] && tmp="/tmp/memmark.$RANDOM.$RANDOM"
+        curl -fsSL "$DEFAULT_MEMMARK_URL" -o "$tmp"
+        src="$tmp"
+      elif have_cmd wget; then
+        tmp=$(mktemp -t memmark.XXXXXX || true)
+        [[ -z "$tmp" ]] && tmp="/tmp/memmark.$RANDOM.$RANDOM"
+        wget -qO "$tmp" "$DEFAULT_MEMMARK_URL"
+        src="$tmp"
+      else
+        echo "[install] Need curl or wget to download from default URL." >&2
+        exit 1
+      fi
     fi
   fi
 
