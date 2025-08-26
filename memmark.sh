@@ -273,7 +273,7 @@ main() {
   done
 
   if [[ -n "$root_pid" && ${#cmd[@]} -gt 0 ]]; then err "--pid is mutually exclusive with command"; exit 2; fi
-  if [[ -z "$root_pid" && ${#cmd[@]} -eq 0 ]]; then err "Provide --pid or a command after --"; exit 2; fi
+  if [[ -z "$root_pid" && ${#cmd[@]} -eq 0 ]]; then err "Provide --pid or a command after -- (see --help for more details)"; exit 2; fi
 
   local launched=0 cmd_exit=0
   if [[ ${#cmd[@]} -gt 0 ]]; then
