@@ -62,12 +62,8 @@ Stop conditions:
 - `--interval <DURATION>`: Sampling interval (e.g., `200ms`, `1s`, `2m`). Default: `1s`.
 - `--duration <DURATION>`: Maximum duration to run. Default: run until target exits.
 - `--out <PATH>`: CSV output path. Use `-` for stdout. Default: `memmark.csv` in CWD.
-- `--append`: Append to output file (no duplicate header).
-- `--no-header`: Do not write CSV header.
 - `--smaps`: On Linux, parse `/proc/<pid>/smaps` to collect PSS and swap (higher overhead; disabled by default).
 - `--chart <PATH>`: If set and gnuplot is available, render a PNG chart to this path.
-- `--title <STRING>`: Title for the chart.
-- `--fields <CSV>`: Limit columns (e.g., `timestamp,rss_kib,vsz_kib`). Defaults to all.
 
 ### CSV schema
 
@@ -94,7 +90,6 @@ timestamp,unix_ms,root_pid,pid_count,rss_kib,vsz_kib,swap_kib,pss_kib,phys_footp
 
 If `gnuplot` is installed and `--chart <png>` is provided, memmark will generate a time series chart using the CSV it produced.
 - By default, it renders RSS, VSZ, and (if present) SWAP as lines.
-- You can customize the title with `--title`.
 
 The script embeds a minimal gnuplot program, so no extra files are required.
 
