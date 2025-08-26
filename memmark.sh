@@ -3,9 +3,14 @@
 # Portable to macOS and Linux. Default is fast mode; Linux smaps metrics only with --smaps.
 
 set -euo pipefail
-IFS=$' 	
-'
+IFS=$' 	\n'
 LC_ALL=C
+
+# Globals used by traps
+ROOT_PID=""
+LAUNCHED=0
+STOP_REQUESTED=0
+INT_COUNT=0
 
 VERSION="0.1.0"
 
@@ -162,6 +167,24 @@ linux_mapped_regions() {
   echo "$total"
 }
 
+on_sigint() {
+  STOP_REQUESTED=1
+  INT_COUNT=$((INT_COUNT+1))
+  # Only forward to launched commands; do not kill attached PIDs we didn't start.
+  if [[ $LAUNCHED -eq 1 && -n "$ROOT_PID" ]]; then
+    local sig="INT"
+    if [[ $INT_COUNT -ge 3 ]]; then sig="KILL"; elif [[ $INT_COUNT -ge 2 ]]; then sig="TERM"; fi
+    kill -"$sig" "$ROOT_PID" 2>/dev/null || true
+  fi
+}
+
+on_sigterm() {
+  STOP_REQUESTED=1
+  if [[ $LAUNCHED -eq 1 && -n "$ROOT_PID" ]]; then
+    kill -TERM "$ROOT_PID" 2>/dev/null || true
+  fi
+}
+
 # macOS: attempt to sum physical footprint and region counts via vmmap -summary
 macos_vmmap_footprint_regions() {
   local total_kib=0 total_regions=0 pid
@@ -286,6 +309,14 @@ main() {
     if ! pid_alive "$root_pid"; then err "PID $root_pid not running"; exit 1; fi
   fi
 
+  # Export to globals for trap handlers
+  ROOT_PID="$root_pid"
+  LAUNCHED=$launched
+
+  # Install traps to forward signals and stop sampling
+  trap on_sigint INT
+  trap on_sigterm TERM
+
   write_header_if_needed "$out_path"
 
   local start_ms now end_ms
@@ -296,6 +327,8 @@ main() {
 
   # Sampling loop
   while :; do
+    # Stop on user interrupt/termination
+    if [[ $STOP_REQUESTED -eq 1 ]]; then break; fi
     if [[ $end_ms -gt 0 ]]; then
       now=$(now_ms)
       if [[ $now -ge $end_ms ]]; then break; fi
