@@ -170,33 +170,33 @@ macos_vmmap_footprint_regions() {
     # vmmap -summary can be slow; best-effort parsing
     local out
     out=$(vmmap -summary "$pid" 2>/dev/null || true)
-    if [[ -z "$out" ]]; then continue; fi
-    # Physical Footprint: may appear as e.g., "Physical footprint: 120.5M"
-    local pf_line pf_val
-    pf_line=$(printf "%s\n" "$out" | awk 'tolower($0) ~ /physical footprint/ {print; exit}')
+    [[ -z "$out" ]] && continue
+
+    # Physical Footprint: handle formats like "120.5M", "120.5 MB", "120.5MiB"
+    local pf_line pf_token num unit kib
+    pf_line=$(printf "%s\n" "$out" | awk 'tolower($0) ~ /physical[[:space:]]+footprint/ {print; exit}')
     if [[ -n "$pf_line" ]]; then
-      pf_val=$(printf "%s\n" "$pf_line" | awk '{for(i=1;i<=NF;i++){if($i ~ /[0-9]/){print $i; exit}}}')
-      # Convert units to KiB if suffix present (K/M/G/T)
-      if [[ "$pf_val" =~ ^([0-9]+\.?[0-9]*)([KkMmGgTt]?)$ ]]; then
-        local num="${BASH_REMATCH[1]}" unit="${BASH_REMATCH[2]}" mult=1
+      pf_token=$(printf "%s\n" "$pf_line" | grep -Eio '[0-9]+([.,][0-9]+)?[[:space:]]*(k|m|g|t)i?b?' | head -n1 | tr '[:upper:]' '[:lower:]' | tr -d ' ')
+      if [[ -n "$pf_token" ]]; then
+        pf_token=${pf_token/,/.}
+        num=$(printf "%s\n" "$pf_token" | grep -Eo '^[0-9]+(\.[0-9]+)?')
+        unit=$(printf "%s\n" "$pf_token" | sed -E 's/^[0-9]+(\.[0-9]+)?//')
         case "$unit" in
-          K|k) mult=1 ;;
-          M|m) mult=1024 ;;
-          G|g) mult=1048576 ;;
-          T|t) mult=1073741824 ;;
-          *)   mult=1 ;;
+          k|kb|kib|"") kib=$(awk -v n="$num" 'BEGIN{printf "%d", n}') ;;
+          m|mb|mib)     kib=$(awk -v n="$num" 'BEGIN{printf "%d", n*1024}') ;;
+          g|gb|gib)     kib=$(awk -v n="$num" 'BEGIN{printf "%d", n*1048576}') ;;
+          t|tb|tib)     kib=$(awk -v n="$num" 'BEGIN{printf "%d", n*1073741824}') ;;
+          *)            kib="" ;;
         esac
-        local kib
-        kib=$(awk -v n="$num" -v m="$mult" 'BEGIN{printf "%d", n*m}')
-        total_kib=$(( total_kib + kib ))
+        [[ -n "$kib" ]] && total_kib=$(( total_kib + kib ))
       fi
     fi
-    # Extract number of regions from a line containing "regions"
-    local reg_line regs
-    reg_line=$(printf "%s\n" "$out" | awk 'tolower($0) ~ /regions/ {print}' | head -n1)
-    if [[ -n "$reg_line" ]]; then
-      regs=$(printf "%s\n" "$reg_line" | grep -Eo '[0-9]+' | tail -n1)
-      [[ -n "$regs" ]] && total_regions=$(( total_regions + regs ))
+
+    # Regions count (best effort): try to find a numeric value on any line mentioning 'regions'
+    local reg
+    reg=$(printf "%s\n" "$out" | awk 'tolower($0) ~ /regions/ {print}' | grep -Eo '[0-9]+' | head -n1 || true)
+    if [[ -n "$reg" ]]; then
+      total_regions=$(( total_regions + reg ))
     fi
   done
   printf "%d %d\n" "$total_kib" "$total_regions"
