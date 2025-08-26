@@ -231,9 +231,8 @@ write_header_if_needed() {
     echo "timestamp,unix_ms,root_pid,pid_count,rss_kib,vsz_kib,swap_kib,pss_kib,phys_footprint_kib,mapped_regions"
     return
   fi
-  if [[ ! -f "$path" || ! -s "$path" ]]; then
-    echo "timestamp,unix_ms,root_pid,pid_count,rss_kib,vsz_kib,swap_kib,pss_kib,phys_footprint_kib,mapped_regions" >"$path"
-  fi
+  # Always overwrite the CSV and write a fresh header
+  echo "timestamp,unix_ms,root_pid,pid_count,rss_kib,vsz_kib,swap_kib,pss_kib,phys_footprint_kib,mapped_regions" >"$path"
 }
 
 append_csv_row() {
