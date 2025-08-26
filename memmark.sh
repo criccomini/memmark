@@ -259,6 +259,8 @@ set key outside
 set xdata time
 set timefmt '%s'
 set format x '%H:%M:%S'
+set logscale y
+set yrange [1:*]
 set title '${title}'
 plot \
   '${csv}' using (column(2)/1000):5 with lines lw 2 title 'RSS KiB', \
