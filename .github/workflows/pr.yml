@@ -1,0 +1,35 @@
+name: tests
+
+on:
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  test:
+    name: Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install optional deps (gnuplot) on Ubuntu
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gnuplot || true
+
+      - name: Install optional deps (gnuplot) on macOS
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install gnuplot || true
+
+      - name: Run tests
+        shell: bash
+        run: |
+          bash tests/test.sh
