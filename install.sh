@@ -55,13 +55,6 @@ choose_bin_dir() {
     fi
   done
 
-  # Fallback: if PATH contains a writable dir, use the first
-  local p IFS=:
-  for p in $PATH; do
-    [[ -z "$p" ]] && continue
-    if [[ -d "$p" && -w "$p" ]]; then echo "$p"; return 0; fi
-  done
-
   # Nothing suitable
   echo ""; return 1
 }
